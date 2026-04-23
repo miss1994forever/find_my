@@ -38,73 +38,58 @@ struct ContentView: View {
     
     var body: some View {
         TabView {
-            ZStack(alignment: .top) {
-                // 添加定位点并绑定相机视角
-                Map(position: $position) {
-                    UserAnnotation() // 显示用户当前位置的蓝点
+            FindMyMap(position: $position)
+                .tabItem {
+                    Label("People", systemImage: "person.2.fill")
                 }
-                .mapControls {
-                    MapUserLocationButton() // 添加返回当前位置的按钮（蓝色飞机图标）
-                    MapCompass()            // 添加指南针
-                    MapScaleView()          // 添加比例尺
-                    MapPitchToggle()        // 3D视角切换
-                }
-                .mapStyle(.standard(elevation: .realistic))
-                // 使用 safeAreaInset 自动处理顶部毛玻璃和控件避让
-                .safeAreaInset(edge: .top) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        // 若想让毛玻璃有一定高度包裹顶部，稍微给一点 height，如果只想覆盖状态栏，可以给个较小的值
-                        .frame(height: 20)
-                }
-                
-                // 这里可以添加底部的浮动面板 (Bottom Sheet)
-            }
-            .tabItem {
-                Label("People", systemImage: "person.2.fill")
-            }
             
-            ZStack(alignment: .top) {
-                Map(position: $position) {
-                    UserAnnotation()
+            FindMyMap(position: $position)
+                .tabItem {
+                    Label("Devices", systemImage: "laptopcomputer.and.iphone")
                 }
-                .mapControls { MapUserLocationButton() }
-                .safeAreaInset(edge: .top) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .frame(height: 20)
-                }
-            }
-            .tabItem {
-                Label("Devices", systemImage: "laptopcomputer.and.iphone")
-            }
             
-            ZStack(alignment: .top) {
-                Map(position: $position) {
-                    UserAnnotation()
+            FindMyMap(position: $position)
+                .tabItem {
+                    Label("Items", systemImage: "airtag")
                 }
-                .mapControls { MapUserLocationButton() }
-                .safeAreaInset(edge: .top) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .frame(height: 20)
-                }
-            }
-            .tabItem {
-                Label("Items", systemImage: "airtag")
-            }
             
-            NavigationView {
-                Text("Me Settings")
-                    .navigationTitle("Me")
-            }
-            .tabItem {
-                Label("Me", systemImage: "person.circle.fill")
-            }
+            FindMyMap(position: $position)
+                .tabItem {
+                    Label("Me", systemImage: "person.circle.fill")
+                }
         }
         .onAppear {
             // 当主视图首次加载时请求权限弹窗
             locationManager.requestPermission()
+        }
+    }
+}
+
+// 提取一个通用的地图视图组件，以保持四个界面完全一致的样式和点击行为
+struct FindMyMap: View {
+    @Binding var position: MapCameraPosition
+    
+    var body: some View {
+        ZStack(alignment: .top) {
+            // 添加定位点并绑定相机视角
+            Map(position: $position) {
+                UserAnnotation() // 显示用户当前位置的蓝点
+            }
+            .mapControls {
+                // MapUserLocationButton 可以自动在“只是跟随”和“跟随且附带指南针/视线方向(Heading)”两种状态间切换
+                MapUserLocationButton() // 蓝色飞机/箭头图标
+                MapPitchToggle()        // 3D视角切换
+                MapCompass()            // 指南针
+                MapScaleView()          // 比例尺
+            }
+            .mapStyle(.standard(elevation: .realistic))
+            // 使用 safeAreaInset 自动处理顶部毛玻璃和控件避让
+            .safeAreaInset(edge: .top) {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    // 若想让毛玻璃有一定高度包裹顶部，稍微给一点 height，如果只想覆盖状态栏，可以给个较小的值
+                    .frame(height: 20)
+            }
         }
     }
 }
