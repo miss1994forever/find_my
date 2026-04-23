@@ -1,3 +1,5 @@
+import SwiftUI
+
 struct DeviceModel: Identifiable, Equatable {
     let id = UUID()
     let name: String
@@ -71,6 +73,8 @@ struct DeviceDetailView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
+        // 关键修复：确保内容在缩小时也始终贴紧顶部，而不会因为整体高度被切导致被居中截断
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(Color.clear)
     }
     
@@ -98,4 +102,3 @@ struct DeviceDetailView: View {
         .buttonStyle(.plain)
     }
 }
-

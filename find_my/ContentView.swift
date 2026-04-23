@@ -31,6 +31,7 @@ struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
     @State private var selectedTab: String = "Devices"
     @State private var selectedDevice: DeviceModel? = nil
+    @State private var detailDetent: PresentationDetent = .height(380)
     
     // 使用 AppStorage，确保仅在首次打开应用时（或者状态变回true时）弹出 Onboarding
     @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
@@ -64,11 +65,21 @@ struct ContentView: View {
             DeviceDetailView(device: device) {
                 selectedDevice = nil
             }
-            .presentationDetents([.fraction(0.35), .medium, .large])
-            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(true)
+            // 使用自定义高度 380 刚好遮挡底层 300 像素的 midHeight + Tab Bar 高度
+            // 添加 height(80) 作为其最小化状态，使得用户向下滑动时会定格在底部而不会关闭
+            .presentationDetents([.height(80), .height(380), .fraction(0.999)], selection: $detailDetent)
+            // 允许背后地图完全交互，同时使用 upThrough: .fraction(0.999) 防止 sheet 在最大化时缩放背后的地图
+            .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.999)))
             .presentationBackground(.regularMaterial)
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(30)
+        }
+        .onChange(of: selectedDevice) { newValue in
+            if newValue != nil {
+                // 每次有新设备被选中，确保默认弹出高度回到 380
+                detailDetent = .height(380)
+            }
         }
     }
 }
@@ -178,7 +189,18 @@ struct TabScreen: View {
                         }
                     }
             )
+            // 下拉后不显示Devices sheet：完全平滑移出屏幕，关闭后再移回
+            .offset(y: selectedDevice != nil ? UIScreen.main.bounds.height : 0)
+            .animation(.easeInOut(duration: 0.3), value: selectedDevice)
             // 不再使用 .edgesIgnoringSafeArea(.bottom)，保证正好落在 Tab Bar 的顶端
+            .onChange(of: selectedDevice) { newValue in
+                if newValue == nil {
+                    // 当取消选择并返回到 Devices 页面时，确保高度重新归位并出现
+                    withAnimation(.interpolatingSpring(stiffness: 300, damping: 30)) {
+                        sheetHeight = midHeight
+                    }
+                }
+            }
         }
     }
 }
@@ -273,103 +295,3 @@ struct FindMyMap: View {
     ContentView()
 }
 
-struct DeviceModel: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let desc: String
-    let status: String
-    let icon: String
-}
-
-struct DeviceDetailView: View {
-    let device: DeviceModel
-    var onDismiss: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(device.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text(device.desc)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                    HStack(spacing: 4) {
-                        Text("1 minute ago")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                        Image(systemName: "battery.100")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                Spacer()
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.gray.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            
-            // Buttons HStack
-            HStack(spacing: 12) {
-                actionButton(icon: "play.circle.fill", color: .blue, title: "Play Sound", subtitle: "Off")
-                actionButton(icon: "arrow.turn.up.right", color: .blue, title: "Directions", subtitle: "2.6 miles • 19 min")
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 20)
-            
-            // List for extra options
-            List {
-                Section {
-                    Button(action: {}) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Image(systemName: "lock.fill")
-                                .foregroundColor(.red)
-                            Text("Mark As Lost")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            Text("Activate")
-                                .font(.subheadline)
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.vertical, 4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-        }
-        .background(Color.clear)
-    }
-    
-    private func actionButton(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        Button(action: {}) {
-            VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title)
-                    .foregroundColor(color)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color(.systemBackground).opacity(0.6))
-            .cornerRadius(12)
-        }
-        .buttonStyle(.plain)
-    }
-}
