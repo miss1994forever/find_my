@@ -96,25 +96,35 @@ struct TabScreen: View {
                 .padding(.horizontal)
                 .padding(.bottom, 10)
                 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        if tabName == "People" {
-                            DeviceRow(name: "Qiongfang Chen", desc: "Wenzhou, Zhejiang • Now", status: "160 mi", icon: "person.crop.circle.fill")
-                        } else if tabName == "Devices" {
-                            DeviceRow(name: "Tania's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
-                            Divider().padding(.leading, 56)
-                            DeviceRow(name: "Tania's AirPods Pro", desc: "Jefferson Square • 2 min. ago", status: "2 mi", icon: "airpodspro")
-                            Divider().padding(.leading, 56)
-                            DeviceRow(name: "Tania's Apple Watch", desc: "Jefferson Square • 1 min. ago", status: "2 mi", icon: "applewatch")
-                            Divider().padding(.leading, 56)
-                            DeviceRow(name: "Tania's iPad Pro", desc: "Alamo Square • Now", status: "2 mi", icon: "ipad.gen1")
-                        } else {
-                            Text("\(tabName) List is empty.")
-                                .foregroundColor(.secondary)
-                                .padding(.top, 20)
-                        }
+                List {
+                    if tabName == "People" {
+                        DeviceRow(name: "Xiaoming", desc: "Hangzhou, Zhejiang • Now", status: "160 mi", icon: "person.crop.circle.fill")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3)) // 控制分割线颜色
+                    } else if tabName == "Devices" {
+                        DeviceRow(name: "Haojun's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's AirPods Pro", desc: "Jefferson Square • 2 min. ago", status: "2 mi", icon: "airpodspro")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's Apple Watch", desc: "Jefferson Square • 1 min. ago", status: "2 mi", icon: "applewatch")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's iPad Pro", desc: "Alamo Square • Now", status: "2 mi", icon: "ipad.gen1")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                    } else {
+                        Text("\(tabName) List is empty.")
+                            .foregroundColor(.secondary)
+                            .padding(.top, 20)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
                 }
+                .listStyle(.plain)
+                // iOS 16+: 隐藏系统列表的默认灰色背景，以免遮蔽我们写好的半透明材质面板
+                .scrollContentBackground(.hidden)
             }
             .frame(height: sheetHeight, alignment: .top)
             // 使用系统的半透明材质（与原生 Tab Bar 的毛玻璃极为接近），且只对顶部切圆角
@@ -175,8 +185,7 @@ struct DeviceRow: View {
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
         // 移除死板的白色背景，让它透出底下的毛玻璃
         .background(Color.clear)
     }
