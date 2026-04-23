@@ -7,10 +7,34 @@
 
 import SwiftUI
 import MapKit
+import CoreLocation
+
+// 1. 创建一个用于管理和请求定位权限的类
+class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    
+    override init() {
+        super.init()
+        manager.delegate = self
+    }
+    
+    // 调用此方法主动触发弹窗
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
+    }
+    
+    // 监听权限改变状态（可选，用于调试）
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        print("Location authorization status changed: \(manager.authorizationStatus.rawValue)")
+    }
+}
 
 struct ContentView: View {
     // 默认视角设为跟随用户位置
     @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
+    
+    // 维持着用于系统级请求权限的管理实例
+    @StateObject private var locationManager = LocationManager()
     
     var body: some View {
         TabView {
@@ -26,14 +50,13 @@ struct ContentView: View {
                     MapPitchToggle()        // 3D视角切换
                 }
                 .mapStyle(.standard(elevation: .realistic))
-                // 将地图的控件（如右上角的定位图标）整体往下推 40 points，避免遮挡
-                .safeAreaPadding(.top, 40)
-                
-                // 顶部毛玻璃效果：高度设为0，通过忽略安全区自动延伸填满整个顶部状态栏区域
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .frame(height: 0)
-                    .ignoresSafeArea(edges: .top)
+                // 使用 safeAreaInset 自动处理顶部毛玻璃和控件避让
+                .safeAreaInset(edge: .top) {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        // 若想让毛玻璃有一定高度包裹顶部，稍微给一点 height，如果只想覆盖状态栏，可以给个较小的值
+                        .frame(height: 20)
+                }
                 
                 // 这里可以添加底部的浮动面板 (Bottom Sheet)
             }
@@ -46,12 +69,11 @@ struct ContentView: View {
                     UserAnnotation()
                 }
                 .mapControls { MapUserLocationButton() }
-                .safeAreaPadding(.top, 40)
-                
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .frame(height: 0)
-                    .ignoresSafeArea(edges: .top)
+                .safeAreaInset(edge: .top) {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .frame(height: 20)
+                }
             }
             .tabItem {
                 Label("Devices", systemImage: "laptopcomputer.and.iphone")
@@ -62,12 +84,11 @@ struct ContentView: View {
                     UserAnnotation()
                 }
                 .mapControls { MapUserLocationButton() }
-                .safeAreaPadding(.top, 40)
-                
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .frame(height: 0)
-                    .ignoresSafeArea(edges: .top)
+                .safeAreaInset(edge: .top) {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .frame(height: 20)
+                }
             }
             .tabItem {
                 Label("Items", systemImage: "airtag")
@@ -80,6 +101,10 @@ struct ContentView: View {
             .tabItem {
                 Label("Me", systemImage: "person.circle.fill")
             }
+        }
+        .onAppear {
+            // 当主视图首次加载时请求权限弹窗
+            locationManager.requestPermission()
         }
     }
 }
