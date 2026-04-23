@@ -9,7 +9,6 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// 1. 创建一个用于管理和请求定位权限的类
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     
@@ -18,78 +17,181 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.delegate = self
     }
     
-    // 调用此方法主动触发弹窗
     func requestPermission() {
         manager.requestWhenInUseAuthorization()
     }
     
-    // 监听权限改变状态（可选，用于调试）
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         print("Location authorization status changed: \(manager.authorizationStatus.rawValue)")
     }
 }
 
 struct ContentView: View {
-    // 默认视角设为跟随用户位置
     @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
-    
-    // 维持着用于系统级请求权限的管理实例
     @StateObject private var locationManager = LocationManager()
+    @State private var selectedTab: String = "Devices"
     
     var body: some View {
-        TabView {
-            FindMyMap(position: $position)
-                .tabItem {
-                    Label("People", systemImage: "person.2.fill")
-                }
+        TabView(selection: $selectedTab) {
+            TabScreen(tabName: "People", position: $position)
+                .tabItem { Label("People", systemImage: "person.2.fill") }
+                .tag("People")
             
-            FindMyMap(position: $position)
-                .tabItem {
-                    Label("Devices", systemImage: "laptopcomputer.and.iphone")
-                }
+            TabScreen(tabName: "Devices", position: $position)
+                .tabItem { Label("Devices", systemImage: "laptopcomputer.and.iphone") }
+                .tag("Devices")
             
-            FindMyMap(position: $position)
-                .tabItem {
-                    Label("Items", systemImage: "airtag")
-                }
+            TabScreen(tabName: "Items", position: $position)
+                .tabItem { Label("Items", systemImage: "airtag") }
+                .tag("Items")
             
-            FindMyMap(position: $position)
-                .tabItem {
-                    Label("Me", systemImage: "person.circle.fill")
-                }
+            NavigationView {
+                Text("Me Settings")
+                    .navigationTitle("Me")
+            }
+            .tabItem { Label("Me", systemImage: "person.circle.fill") }
+            .tag("Me")
         }
         .onAppear {
-            // 当主视图首次加载时请求权限弹窗
             locationManager.requestPermission()
         }
     }
 }
 
-// 提取一个通用的地图视图组件，以保持四个界面完全一致的样式和点击行为
+struct TabScreen: View {
+    var tabName: String
+    @Binding var position: MapCameraPosition
+    
+    @State private var sheetHeight: CGFloat = 350
+    let minHeight: CGFloat = 110
+    let midHeight: CGFloat = 350
+    let maxHeight: CGFloat = UIScreen.main.bounds.height - 250
+    
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            FindMyMap(position: $position)
+                .safeAreaPadding(.bottom, sheetHeight)
+            
+            // 自定义的底部常驻面板 (Custom Bottom Sheet)
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                
+                HStack {
+                    Text(tabName)
+                        .font(.title2)
+                        .bold()
+                    Spacer()
+                    Button(action: {}) {
+                        Image(systemName: "plus")
+                            .font(.title3)
+                            .foregroundColor(.blue)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+                
+                ScrollView {
+                    VStack(spacing: 0) {
+                        if tabName == "Devices" {
+                            DeviceRow(name: "Tania's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
+                            Divider().padding(.leading, 56)
+                            DeviceRow(name: "Tania's AirPods Pro", desc: "Jefferson Square • 2 min. ago", status: "2 mi", icon: "airpodspro")
+                            Divider().padding(.leading, 56)
+                            DeviceRow(name: "Tania's Apple Watch", desc: "Jefferson Square • 1 min. ago", status: "2 mi", icon: "applewatch")
+                            Divider().padding(.leading, 56)
+                            DeviceRow(name: "Tania's iPad Pro", desc: "Alamo Square • Now", status: "2 mi", icon: "ipad.gen1")
+                        } else {
+                            Text("\(tabName) List is empty.")
+                                .foregroundColor(.secondary)
+                                .padding(.top, 20)
+                        }
+                    }
+                }
+            }
+            .frame(height: sheetHeight, alignment: .top)
+            .background(Color(UIColor.systemBackground))
+            .cornerRadius(24)
+            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: -5)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let newHeight = sheetHeight - value.translation.height
+                        if newHeight > minHeight - 20 && newHeight < maxHeight + 50 {
+                            sheetHeight = newHeight
+                        }
+                    }.onEnded { value in
+                        let target = sheetHeight - value.predictedEndTranslation.height
+                        withAnimation(.interpolatingSpring(stiffness: 300, damping: 30)) {
+                            if target > midHeight + 100 {
+                                sheetHeight = maxHeight
+                            } else if target > minHeight + 60 {
+                                sheetHeight = midHeight
+                            } else {
+                                sheetHeight = minHeight
+                            }
+                        }
+                    }
+            )
+            .edgesIgnoringSafeArea(.bottom)
+        }
+    }
+}
+
+struct DeviceRow: View {
+    var name: String
+    var desc: String
+    var status: String
+    var icon: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .foregroundColor(.black)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .font(.body)
+                    .fontWeight(.semibold)
+                Text(desc)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Text(status)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 12)
+        .background(Color(UIColor.systemBackground))
+    }
+}
+
 struct FindMyMap: View {
     @Binding var position: MapCameraPosition
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // 添加定位点并绑定相机视角
-            Map(position: $position) {
-                UserAnnotation() // 显示用户当前位置的蓝点
-            }
-            .mapControls {
-                // MapUserLocationButton 可以自动在“只是跟随”和“跟随且附带指南针/视线方向(Heading)”两种状态间切换
-                MapUserLocationButton() // 蓝色飞机/箭头图标
-                MapPitchToggle()        // 3D视角切换
-                MapCompass()            // 指南针
-                MapScaleView()          // 比例尺
-            }
-            .mapStyle(.standard(elevation: .realistic))
-            // 使用 safeAreaInset 自动处理顶部毛玻璃和控件避让
-            .safeAreaInset(edge: .top) {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    // 若想让毛玻璃有一定高度包裹顶部，稍微给一点 height，如果只想覆盖状态栏，可以给个较小的值
-                    .frame(height: 20)
-            }
+        Map(position: $position) {
+            UserAnnotation()
+        }
+        .mapControls {
+            MapUserLocationButton()
+            MapPitchToggle()
+            MapCompass()
+            MapScaleView()
+        }
+        .mapStyle(.standard(elevation: .realistic))
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 8)
+                .background(.ultraThinMaterial, ignoresSafeAreaEdges: .top)
         }
     }
 }
