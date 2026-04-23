@@ -63,10 +63,10 @@ struct TabScreen: View {
     @Binding var position: MapCameraPosition
     
     // 面板初始高度，从 110 改为 65，使其正好包裹顶部把手与标题栏，隐藏下方的 List 内容
-    @State private var sheetHeight: CGFloat = 65
-    let minHeight: CGFloat = 65
-    let midHeight: CGFloat = 350
-    let maxHeight: CGFloat = UIScreen.main.bounds.height - 250
+    @State private var sheetHeight: CGFloat = 60
+    let minHeight: CGFloat = 55
+    let midHeight: CGFloat = 300
+    let maxHeight: CGFloat = UIScreen.main.bounds.height - 150
     
     var body: some View {
         ZStack(alignment: .bottom) {
