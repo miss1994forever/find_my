@@ -1,55 +1,27 @@
-//
-//  ContentView.swift
-//  find_my
-//
-//  Created by haojun on 2026/4/22.
-//
-
-import SwiftUI
-import MapKit
-import CoreLocation
-
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    
-    override init() {
-        super.init()
-        manager.delegate = self
-    }
-    
-    func requestPermission() {
-        manager.requestWhenInUseAuthorization()
-    }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        print("Location authorization status changed: \(manager.authorizationStatus.rawValue)")
-    }
-}
 
 struct ContentView: View {
     @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
     @StateObject private var locationManager = LocationManager()
     @State private var selectedTab: String = "Devices"
-    @State private var selectedDevice: DeviceModel? = nil
     
     // 使用 AppStorage，确保仅在首次打开应用时（或者状态变回true时）弹出 Onboarding
     @AppStorage("isFirstLaunch") private var isFirstLaunch: Bool = true
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            TabScreen(tabName: "People", position: $position, selectedDevice: $selectedDevice)
+            TabScreen(tabName: "People", position: $position)
                 .tabItem { Label("People", systemImage: "person.2.fill") }
                 .tag("People")
             
-            TabScreen(tabName: "Devices", position: $position, selectedDevice: $selectedDevice)
+            TabScreen(tabName: "Devices", position: $position)
                 .tabItem { Label("Devices", systemImage: "laptopcomputer.and.iphone") }
                 .tag("Devices")
             
-            TabScreen(tabName: "Items", position: $position, selectedDevice: $selectedDevice)
+            TabScreen(tabName: "Items", position: $position)
                 .tabItem { Label("Items", systemImage: "airtag") }
                 .tag("Items")
             
-            TabScreen(tabName: "Me", position: $position, selectedDevice: $selectedDevice)
+            TabScreen(tabName: "Me", position: $position)
                 .tabItem { Label("Me", systemImage: "person.circle.fill") }
                 .tag("Me")
         }
@@ -60,23 +32,12 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $isFirstLaunch) {
             OnboardingView(isFirstLaunch: $isFirstLaunch)
         }
-        .sheet(item: $selectedDevice) { device in
-            DeviceDetailView(device: device) {
-                selectedDevice = nil
-            }
-            .presentationDetents([.fraction(0.35), .medium, .large])
-            .presentationBackgroundInteraction(.enabled)
-            .presentationBackground(.regularMaterial)
-            .presentationDragIndicator(.visible)
-            .presentationCornerRadius(30)
-        }
     }
 }
 
 struct TabScreen: View {
     var tabName: String
     @Binding var position: MapCameraPosition
-    @Binding var selectedDevice: DeviceModel?
     
     // 面板初始高度，从 110 改为 65，使其正好包裹顶部把手与标题栏，隐藏下方的 List 内容
     @State private var sheetHeight: CGFloat = 60
@@ -118,27 +79,15 @@ struct TabScreen: View {
                             .listRowBackground(Color.clear)
                             .listRowSeparatorTint(.gray.opacity(0.3)) // 控制分割线颜色
                     } else if tabName == "Devices" {
-                        let iph = DeviceModel(name: "Haojun's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
-                        let airp = DeviceModel(name: "Haojun's AirPods Pro", desc: "Zhejiang University Yuquan Campus 3 Dining Hall • 2 min. ago", status: "2 mi", icon: "airpodspro")
-                        let ipad = DeviceModel(name: "Haojun's iPad Pro", desc: "Zhejiang University Yuquan Campus Library • Now", status: "2 mi", icon: "ipad.gen1")
-                        
-                        Button { selectedDevice = iph } label: {
-                            DeviceRow(name: iph.name, desc: iph.desc, status: iph.status, icon: iph.icon)
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparatorTint(.gray.opacity(0.3))
-                        
-                        Button { selectedDevice = airp } label: {
-                            DeviceRow(name: airp.name, desc: airp.desc, status: airp.status, icon: airp.icon)
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparatorTint(.gray.opacity(0.3))
-                        
-                        Button { selectedDevice = ipad } label: {
-                            DeviceRow(name: ipad.name, desc: ipad.desc, status: ipad.status, icon: ipad.icon)
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's AirPods Pro", desc: "Zhejiang University Yuquan Campus 3 Dining Hall • 2 min. ago", status: "2 mi", icon: "airpodspro")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
+                        DeviceRow(name: "Haojun's iPad Pro", desc: "Zhejiang University Yuquan Campus Library • Now", status: "2 mi", icon: "ipad.gen1")
+                            .listRowBackground(Color.clear)
+                            .listRowSeparatorTint(.gray.opacity(0.3))
                     } else {
                         Text("\(tabName) List is empty.")
                             .foregroundColor(.secondary)
@@ -225,7 +174,7 @@ struct FindMyMap: View {
         Map(position: $position) {
             UserAnnotation()
             
-            // 为 Devices 界面添加一些静态的模拟设备标注 
+            // 为 Devices 界面添加一些静态的模拟设备标注 (基于加州或者常见模拟器总部)
             if tabName == "Devices" {
                 Annotation("Haojun's iPhone", coordinate: CLLocationCoordinate2D(latitude: 30.2635, longitude: 120.1200)) {
                     ZStack {
@@ -271,105 +220,4 @@ struct FindMyMap: View {
 
 #Preview {
     ContentView()
-}
-
-struct DeviceModel: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let desc: String
-    let status: String
-    let icon: String
-}
-
-struct DeviceDetailView: View {
-    let device: DeviceModel
-    var onDismiss: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(device.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text(device.desc)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                    HStack(spacing: 4) {
-                        Text("1 minute ago")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                        Image(systemName: "battery.100")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                Spacer()
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.gray.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding()
-            
-            // Buttons HStack
-            HStack(spacing: 12) {
-                actionButton(icon: "play.circle.fill", color: .blue, title: "Play Sound", subtitle: "Off")
-                actionButton(icon: "arrow.turn.up.right", color: .blue, title: "Directions", subtitle: "2.6 miles • 19 min")
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 20)
-            
-            // List for extra options
-            List {
-                Section {
-                    Button(action: {}) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Image(systemName: "lock.fill")
-                                .foregroundColor(.red)
-                            Text("Mark As Lost")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            Text("Activate")
-                                .font(.subheadline)
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.vertical, 4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-        }
-        .background(Color.clear)
-    }
-    
-    private func actionButton(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        Button(action: {}) {
-            VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title)
-                    .foregroundColor(color)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color(.systemBackground).opacity(0.6))
-            .cornerRadius(12)
-        }
-        .buttonStyle(.plain)
-    }
 }
