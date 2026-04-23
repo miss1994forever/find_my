@@ -62,15 +62,17 @@ struct TabScreen: View {
     var tabName: String
     @Binding var position: MapCameraPosition
     
-    @State private var sheetHeight: CGFloat = 350
-    let minHeight: CGFloat = 110
+    // 面板初始高度，从 110 改为 65，使其正好包裹顶部把手与标题栏，隐藏下方的 List 内容
+    @State private var sheetHeight: CGFloat = 65
+    let minHeight: CGFloat = 65
     let midHeight: CGFloat = 350
     let maxHeight: CGFloat = UIScreen.main.bounds.height - 250
     
     var body: some View {
         ZStack(alignment: .bottom) {
             FindMyMap(position: $position)
-                .safeAreaPadding(.bottom, sheetHeight)
+                // 拖拽面板时不再动态改变地图的安全区域，保持固定避让，这样不管面板怎么拉，背后的地图都不会跟着晃动
+                .safeAreaPadding(.bottom, minHeight)
             
             // 自定义的底部常驻面板 (Custom Bottom Sheet)
             VStack(spacing: 0) {
@@ -96,7 +98,9 @@ struct TabScreen: View {
                 
                 ScrollView {
                     VStack(spacing: 0) {
-                        if tabName == "Devices" {
+                        if tabName == "People" {
+                            DeviceRow(name: "Qiongfang Chen", desc: "Wenzhou, Zhejiang • Now", status: "160 mi", icon: "person.crop.circle.fill")
+                        } else if tabName == "Devices" {
                             DeviceRow(name: "Tania's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
                             Divider().padding(.leading, 56)
                             DeviceRow(name: "Tania's AirPods Pro", desc: "Jefferson Square • 2 min. ago", status: "2 mi", icon: "airpodspro")
@@ -113,9 +117,12 @@ struct TabScreen: View {
                 }
             }
             .frame(height: sheetHeight, alignment: .top)
-            .background(Color(UIColor.systemBackground))
-            .cornerRadius(24)
-            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: -5)
+            // 使用系统的半透明材质（与原生 Tab Bar 的毛玻璃极为接近），且只对顶部切圆角
+            .background(.regularMaterial)
+            .clipShape(
+                UnevenRoundedRectangle(topLeadingRadius: 24, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 24)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: -2)
             .gesture(
                 DragGesture()
                     .onChanged { value in
@@ -136,7 +143,7 @@ struct TabScreen: View {
                         }
                     }
             )
-            .edgesIgnoringSafeArea(.bottom)
+            // 不再使用 .edgesIgnoringSafeArea(.bottom)，保证正好落在 Tab Bar 的顶端
         }
     }
 }
@@ -170,9 +177,11 @@ struct DeviceRow: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
-        .background(Color(UIColor.systemBackground))
+        // 移除死板的白色背景，让它透出底下的毛玻璃
+        .background(Color.clear)
     }
 }
+
 
 struct FindMyMap: View {
     @Binding var position: MapCameraPosition
