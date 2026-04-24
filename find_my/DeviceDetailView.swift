@@ -18,6 +18,8 @@ struct DeviceDetailView: View {
     let device: DeviceModel
     var onDismiss: () -> Void
     
+    @State private var isSearching = false
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -52,8 +54,12 @@ struct DeviceDetailView: View {
                 
                 // Buttons HStack
                 HStack(spacing: 12) {
-                    actionButton(icon: "play.circle.fill", color: .blue, title: "Play Sound", subtitle: "Off")
-                    actionButton(icon: "arrow.turn.up.right", color: .blue, title: "Directions", subtitle: "2.6 miles • 19 min")
+                    actionButton(icon: "play.circle.fill", color: .blue, title: "Play Sound", subtitle: "Off") {
+                        
+                    }
+                    actionButton(icon: "arrow.turn.up.right", color: .blue, title: "Directions", subtitle: "2.6 miles • 19 min") {
+                        isSearching = true
+                    }
                 }
                 // 使用 fixedSize 让按键高度一致对齐
                 .fixedSize(horizontal: false, vertical: true)
@@ -88,10 +94,13 @@ struct DeviceDetailView: View {
         }
         .scrollIndicators(.hidden)
         .background(Color.clear)
+        .fullScreenCover(isPresented: $isSearching) {
+            SearchView(deviceName: device.name)
+        }
     }
     
-    private func actionButton(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        Button(action: {}) {
+    private func actionButton(icon: String, color: Color, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: icon)
                     .font(.title)
