@@ -129,23 +129,38 @@ struct TabScreen: View {
                             .listRowBackground(Color.clear)
                             .listRowSeparatorTint(.gray.opacity(0.3)) // 控制分割线颜色
                     } else if tabName == "Devices" {
-                        let iph = DeviceModel(name: "Haojun's iPhone", desc: "This iPhone", status: "With You", icon: "iphone")
-                        let airp = DeviceModel(name: "Haojun's AirPods Pro", desc: "Zhejiang University Yuquan Campus 3 Dining Hall • 2 min. ago", status: "2 mi", icon: "airpodspro")
-                        let ipad = DeviceModel(name: "Haojun's iPad Pro", desc: "Zhejiang University Yuquan Campus Library • Now", status: "2 mi", icon: "ipad.gen1")
+                        let iph = DeviceModel(name: "Haojun's iPhone", desc: "This iPhone", status: "With You", icon: "iphone", coordinate: CLLocationCoordinate2D(latitude: 30.2635, longitude: 120.1200))
+                        let airp = DeviceModel(name: "Haojun's AirPods Pro", desc: "Zhejiang University Yuquan Campus 3 Dining Hall • 2 min. ago", status: "2 mi", icon: "airpodspro", coordinate: CLLocationCoordinate2D(latitude: 30.2658, longitude: 120.1222))
+                        let ipad = DeviceModel(name: "Haojun's iPad Pro", desc: "Zhejiang University Yuquan Campus Library • Now", status: "2 mi", icon: "ipad.gen1", coordinate: CLLocationCoordinate2D(latitude: 30.2630, longitude: 120.1203))
                         
-                        Button { selectedDevice = iph } label: {
+                        Button {
+                            selectedDevice = iph
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                position = .camera(MapCamera(centerCoordinate: iph.coordinate, distance: 800, heading: 0, pitch: 60))
+                            }
+                        } label: {
                             DeviceRow(name: iph.name, desc: iph.desc, status: iph.status, icon: iph.icon)
                         }
                         .listRowBackground(Color.clear)
                         .listRowSeparatorTint(.gray.opacity(0.3))
                         
-                        Button { selectedDevice = airp } label: {
+                        Button {
+                            selectedDevice = airp
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                position = .camera(MapCamera(centerCoordinate: airp.coordinate, distance: 800, heading: 0, pitch: 60))
+                            }
+                        } label: {
                             DeviceRow(name: airp.name, desc: airp.desc, status: airp.status, icon: airp.icon)
                         }
                         .listRowBackground(Color.clear)
                         .listRowSeparatorTint(.gray.opacity(0.3))
                         
-                        Button { selectedDevice = ipad } label: {
+                        Button {
+                            selectedDevice = ipad
+                            withAnimation(.easeInOut(duration: 1.0)) {
+                                position = .camera(MapCamera(centerCoordinate: ipad.coordinate, distance: 800, heading: 0, pitch: 60))
+                            }
+                        } label: {
                             DeviceRow(name: ipad.name, desc: ipad.desc, status: ipad.status, icon: ipad.icon)
                         }
                         .listRowBackground(Color.clear)

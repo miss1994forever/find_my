@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 struct DeviceModel: Identifiable, Equatable {
     let id = UUID()
@@ -6,6 +7,11 @@ struct DeviceModel: Identifiable, Equatable {
     let desc: String
     let status: String
     let icon: String
+    let coordinate: CLLocationCoordinate2D
+    
+    static func == (lhs: DeviceModel, rhs: DeviceModel) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 struct DeviceDetailView: View {
