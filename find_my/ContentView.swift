@@ -241,6 +241,8 @@ struct DeviceRow: View {
                 Text(desc)
                     .font(.footnote)
                     .foregroundColor(.secondary)
+                    .lineLimit(2) // 增加允许换行，防止过长被截断隐藏
+                    .fixedSize(horizontal: false, vertical: true) // 强制允许文字垂直方向展开
             }
             Spacer()
             Text(status)

@@ -60,26 +60,38 @@ struct SearchView: View {
                 
                 // Rotational IMU Arrow Indicator
                 ZStack {
-                    // Dotted track outline
+                    let relAngle = (-motionManager.heading + targetHeading).truncatingRemainder(dividingBy: 360)
+                    let angle = relAngle >= 0 ? relAngle : relAngle + 360
+                    
+                    // Convert to signed angle (-180 to 180) to make zero-crossing (top) perfectly continuous and stable
+                    let signedAngle = angle > 180 ? angle - 360 : angle
+                    let arcLength = abs(signedAngle)
+                    let trackRotation = -90.0 - (signedAngle < 0 ? arcLength : 0)
+                    
+                    // Dotted track outline from top to arrow
                     let dashLine = StrokeStyle(lineWidth: 6, lineCap: .round, dash: [4, 20])
                     Circle()
-                        .trim(from: 0.1, to: 0.4)
+                        .trim(from: 0.0, to: CGFloat(arcLength / 360.0))
                         .stroke(style: dashLine)
                         .foregroundColor(.white.opacity(0.3))
                         .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
+                        .rotationEffect(.degrees(trackRotation))
+                        .animation(.linear(duration: 0.1), value: signedAngle)
                     
+                    // Dynamic target dot at arrow's location
                     Circle()
                         .fill(Color.white)
                         .frame(width: 12, height: 12)
                         .offset(x: 125)
-                        .rotationEffect(.degrees(-45))
+                        .rotationEffect(.degrees(signedAngle - 90))
+                        .animation(.linear(duration: 0.1), value: signedAngle)
 
+                    // Origin top dot at 12 o'clock
                     Circle()
                         .fill(Color.gray)
                         .frame(width: 8, height: 8)
                         .offset(x: 125)
-                        .rotationEffect(.degrees(-135))
+                        .rotationEffect(.degrees(-90))
                     
                     Image(systemName: "location.north.fill")
                         .resizable()
@@ -88,8 +100,8 @@ struct SearchView: View {
                         .foregroundColor(.white)
                         .shadow(color: .white.opacity(0.3), radius: 20)
                         // Uses IMU yaw dynamically pointing towards a relative static target offset
-                        .rotationEffect(.degrees(-motionManager.heading + targetHeading))
-                        .animation(.linear(duration: 0.1), value: motionManager.heading)
+                        .rotationEffect(.degrees(signedAngle))
+                        .animation(.linear(duration: 0.1), value: signedAngle)
                 }
                 
                 Spacer()
