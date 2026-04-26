@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  MainView.swift
 //  find_my
 //
 //  Created by haojun on 2026/4/22.
@@ -26,7 +26,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 }
 
-struct ContentView: View {
+struct MainView: View {
     @State private var position: MapCameraPosition = .userLocation(fallback: .automatic)
     @StateObject private var locationManager = LocationManager()
     @State private var selectedTab: String = "Devices"
@@ -57,9 +57,11 @@ struct ContentView: View {
         .onAppear {
             locationManager.requestPermission()
         }
-        // 当 isFirstLaunch 为真时全屏蒙层显示 OnboardingView
-        .fullScreenCover(isPresented: $isFirstLaunch) {
+        // 当 isFirstLaunch 为真时最大高度的sheet显示 OnboardingView
+        .sheet(isPresented: $isFirstLaunch) {
             OnboardingView(isFirstLaunch: $isFirstLaunch)
+                .presentationDetents([.large]) // 限定只有最大高度，不会有半屏状态
+                .interactiveDismissDisabled(true) // 防止用户自行下拉关闭，只能通过自身按钮来关闭(如果符合设计)
         }
         .sheet(item: $selectedDevice) { device in
             DeviceDetailView(device: device) {
@@ -309,6 +311,6 @@ struct FindMyMap: View {
 }
 
 #Preview {
-    ContentView()
+    MainView()
 }
 
